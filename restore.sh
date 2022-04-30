@@ -9,7 +9,7 @@
 set -o pipefail
 
 source="$1"
-targetdev="$2"
+target="$2"
 
 confirm() {
     while true
@@ -33,7 +33,7 @@ echo
 echo "Summary"
 echo "======="
 echo "Source directory: $source"
-echo "Target device: $targetdev"
+echo "Target: $target"
 echo "Restore amount: $(($size / 1048576)) MiB"
 confirm
 
@@ -44,10 +44,10 @@ cat $image* | \
     pass="$pass" scrypt dec --passphrase env:pass - | \
     pbzip2 -d -c | \
     pv -s $size | \
-    dd of=$targetdev bs=1M >/dev/null
+    dd of=$target bs=1M >/dev/null
 pass=
 
-echo "Checking restored target device ..."
-e2fsck -f $targetdev
+echo "Checking restored target ..."
+e2fsck -f $target
 
 echo "Done!"
