@@ -38,6 +38,19 @@ confirm() {
     done
 }
 
+readpass() {
+    while true
+    do
+        read -s -p "Password: " pass
+        echo
+        read -s -p "Retype password: " pass2
+        echo
+        [ "$pass" = "$pass2" ] && break
+        echo "Passwords don't match! Please try again"
+    done
+    pass2=
+}
+
 echo
 echo "Summary"
 echo "======="
@@ -76,19 +89,21 @@ then
                     echo "$size" > "$target/blockdev.size64"
 
                     echo "Storing backup ..."
+                    readpass
                     image="$target/image.e2i.bz2"
                     tmpdir="$(mktemp -d)"
                     pipe="$tmpdir/sha256sum.pipe"
                     mkfifo "$pipe" >/dev/null
                     sha256sum < "$pipe" > "$tmpdir/checksum" & pid=$!
-                    if e2image -ra -p "$sourcedev" - 2>/dev/null | \
+                    if e2image -ra -p "$sourcedev" - | \
                             pbzip2 -1 -c | \
-                            scrypt enc - | \
+                            pass="$pass" scrypt enc --passphrase env:pass - | \
                             tee "$pipe" | \
                             split -a3 -d -b$partsize - \
                                   "$image"
                     then
                         wait $pid
+                        pass=
                         checksum="$(cat $tmpdir/checksum)"
 
                         echo "Checking the stored data of the new backup ..."

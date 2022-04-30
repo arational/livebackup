@@ -38,11 +38,14 @@ echo "Restore amount: $(($size / 1048576)) MiB"
 confirm
 
 echo "Restoring backup ..."
+read -s -p "Password: " pass
+echo
 cat $image* | \
-    scrypt dec - | \
+    pass="$pass" scrypt dec --passphrase env:pass - | \
     pbzip2 -d -c | \
     pv -s $size | \
     dd of=$targetdev bs=1M >/dev/null
+pass=
 
 echo "Checking restored target device ..."
 e2fsck -f $targetdev
